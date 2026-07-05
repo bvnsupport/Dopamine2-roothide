@@ -334,23 +334,32 @@ int reboot3(uint64_t flags, ...);
     }];
 }
 
+// Cheap-screen safe reboot.
+// Không dùng jbctl reboot_userspace / reboot3(RB2_USERREBOOT)
+// để tránh lỗi mất cảm ứng trên một số máy dùng màn lô.
 - (void)rebootUserspace
 {
     [self runAsRoot:^{
         __block int pid = 0;
         __block int r = 0;
-        [self runUnsandboxed:^{
-            r = exec_cmd_suspended(&pid, JBROOT_PATH("/basebin/jbctl"), "reboot_userspace", NULL);
-            if (r == 0) {
-                // the original plan was to have the process continue outside of this block
-                // unfortunately sandbox blocks kill aswell, so it's a bit racy but works
 
-                // we assume we leave this unsandbox block before the userspace reboot starts
-                // to avoid leaking the label, this seems to work in practice
-                // and even if it doesn't work, leaking the label is no big deal
-                kill(pid, SIGCONT);
-            }
+        [self runUnsandboxed:^{
+            r = exec_cmd_suspended(&pid, JBROOT_PATH("/usr/bin/killall"), "-9", "backboardd", NULL);
+            if (r == 0) kill(pid, SIGCONT);
+
+            r = exec_cmd_suspended(&pid, JBROOT_PATH("/usr/bin/killall"), "-9", "mediaserverd", NULL);
+            if (r == 0) kill(pid, SIGCONT);
+
+            r = exec_cmd_suspended(&pid, JBROOT_PATH("/usr/bin/killall"), "-9", "installd", NULL);
+            if (r == 0) kill(pid, SIGCONT);
+
+            r = exec_cmd_suspended(&pid, JBROOT_PATH("/usr/bin/killall"), "-9", "userd", NULL);
+            if (r == 0) kill(pid, SIGCONT);
+
+            r = exec_cmd_suspended(&pid, JBROOT_PATH("/usr/bin/killall"), "-9", "networkd", NULL);
+            if (r == 0) kill(pid, SIGCONT);
         }];
+
         if (r == 0) {
             cmd_wait_for_exit(pid);
         }
