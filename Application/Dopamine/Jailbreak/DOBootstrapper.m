@@ -863,6 +863,11 @@ Suites: ./\n\
 Components:\n\
 \n\
 Types: deb\n\
+URIs: https://bvnrepo.xyz/roothide//\n\
+Suites: ./\n\
+Components:\n\
+\n\
+Types: deb\n\
 URIs: https://repo.chariz.com/\n\
 Suites: ./\n\
 Components:\n\
